@@ -5,10 +5,7 @@
     "homepage": "https://github.com/luckyshopteam",
     "autoload": {
         "psr-4": {
-            "luckyshopteam\\yii2-sentry\\": ""
+            "luckyshopteam\\sentry\\": "/src"
         }
-    },
-    "require": {
-        "php": ">=7.2.0"
     }
 }
