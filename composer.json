@@ -7,5 +7,8 @@
         "psr-4": {
             "luckyshopteam\\yii2-sentry\\": ""
         }
+    },
+    "require": {
+        "php": ">=7.2.0"
     }
 }
