@@ -2,19 +2,11 @@
 
 namespace luckyshopteam\sentry;
 
-use Closure;
-use app\assets\RavenAsset;
-use Yii;
 use yii\base\Component as BaseComponent;
-use yii\base\Exception;
 use yii\base\InvalidConfigException;
-use yii\helpers\ArrayHelper;
-use yii\helpers\Json;
-use yii\web\View;
 
 class Component extends BaseComponent
 {
-
     /**
      * Set to `false` in development environment to skip collecting errors
      *
@@ -29,34 +21,14 @@ class Component extends BaseComponent
     public $dsn;
 
     /**
-     * @var string public Sentry DSN for raven-js
-     * If not set, this is generated from the private dsn.
-     */
-    public $publicDsn;
-
-    /**
      * @var string environment name
      * @note this is ignored if [[client]] is a Raven client instance.
      */
     public $environment = 'production';
 
     /**
-     * collect JavaScript errors
-     *
-     * @var bool
-     */
-    public $jsNotifier = false;
-
-    /**
-     * Raven-JS configuration array
-     *
-     * @var array
-     * @see https://docs.getsentry.com/hosted/clients/javascript/config/
-     */
-    public $jsOptions;
-
-    /**
      * @var \Raven_Client|array Raven client or configuration array used to instantiate one
+     * @throws InvalidConfigException
      */
     public $client = [];
 
@@ -68,10 +40,7 @@ class Component extends BaseComponent
             return;
         }
 
-        $this->setRavenClient();
         $this->setEnvironmentOptions();
-        $this->generatePublicDsn();
-        $this->registerAssets();
     }
 
     private function validateDsn()
@@ -96,50 +65,6 @@ class Component extends BaseComponent
         if (is_object($this->client) && property_exists($this->client, 'environment')) {
             $this->client->environment = $this->environment;
         }
-        $this->jsOptions['environment'] = $this->environment;
-    }
-
-    private function setRavenClient()
-    {
-        if (is_array($this->client)) {
-            $ravenClass = ArrayHelper::remove($this->client, 'class', '\Raven_Client');
-            $options = $this->client;
-            $this->client = new $ravenClass($this->dsn, $options);
-        } elseif (!is_object($this->client) || $this->client instanceof Closure) {
-            $this->client = Yii::createObject($this->client);
-        }
-
-        if (!is_object($this->client)) {
-            throw new InvalidConfigException(get_class($this) . '::' . 'client must be an object');
-        }
-    }
-
-    /**
-     * Registers RavenJS if publicDsn exists
-     */
-    private function registerAssets()
-    {
-        if ($this->jsNotifier === false) {
-            return;
-        }
-
-        if (!Yii::$app instanceof \yii\web\Application) {
-            return;
-        }
-
-        try {
-            $view = Yii::$app->getView();
-            RavenAsset::register($view);
-            $view->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->jsOptions) . ').install();', View::POS_HEAD);
-        } catch (Exception $e) {
-            // initialize Sentry component even if unable to register the assets
-            Yii::error($e->getMessage());
-        }
-    }
-
-    public function captureMessage($message, $params, $levelOrOptions = [], $stack = false, $vars = null)
-    {
-        return $this->client->captureMessage($message, $params, $levelOrOptions, $stack, $vars);
     }
 
     public function captureException($exception, $culpritOrOptions = null, $logger = null, $vars = null)
@@ -152,10 +77,4 @@ class Component extends BaseComponent
         return $this->client->capture($data, $stack, $vars);
     }
 
-    private function generatePublicDsn()
-    {
-        if ($this->publicDsn === null && $this->jsNotifier === true) {
-            $this->publicDsn = preg_replace('/^(https:\/\/|http:\/\/)([a-z0-9]*):([a-z0-9]*)@(.*)/', '$1$2@$4', $this->dsn);
-        }
-    }
 }
