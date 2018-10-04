@@ -1,0 +1,11 @@
+{
+    "name": "luckyshopteam/yii2-sentry",
+    "description": "Yii2 sentry",
+    "keywords": ["php", "luckyshop", "yii2", "sentry"],
+    "homepage": "https://github.com/luckyshopteam",
+    "autoload": {
+        "psr-4": {
+            "luckyshopteam\\yii2-sentry\\": ""
+        }
+    }
+}
