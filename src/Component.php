@@ -2,8 +2,10 @@
 
 namespace luckyshopteam\sentry;
 
+use Closure;
 use yii\base\Component as BaseComponent;
 use yii\base\InvalidConfigException;
+use yii\helpers\ArrayHelper;
 
 class Component extends BaseComponent
 {
