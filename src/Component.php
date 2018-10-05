@@ -40,6 +40,7 @@ class Component extends BaseComponent
             return;
         }
 
+        $this->setRavenClient();
         $this->setEnvironmentOptions();
     }
 
@@ -64,6 +65,21 @@ class Component extends BaseComponent
 
         if (is_object($this->client) && property_exists($this->client, 'environment')) {
             $this->client->environment = $this->environment;
+        }
+    }
+
+    private function setRavenClient()
+    {
+        if (is_array($this->client)) {
+            $ravenClass = ArrayHelper::remove($this->client, 'class', '\Raven_Client');
+            $options = $this->client;
+            $this->client = new $ravenClass($this->dsn, $options);
+        } elseif (!is_object($this->client) || $this->client instanceof Closure) {
+            $this->client = Yii::createObject($this->client);
+        }
+
+        if (!is_object($this->client)) {
+            throw new InvalidConfigException(get_class($this) . '::' . 'client must be an object');
         }
     }
 
