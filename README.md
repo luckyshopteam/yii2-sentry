@@ -9,7 +9,7 @@ composer require luckyshopteam/yii2-sentry @dev
 Подключение 
 ---------
 
-Подключите классы SentryComponent в компонентах приложения
+Подключите класс SentryComponent в компонентах приложения
 ```
 'components' => [
     'sentry' => [
