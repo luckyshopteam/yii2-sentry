@@ -8,12 +8,12 @@ use Throwable;
 use yii\di\Instance;
 use yii\helpers\VarDumper;
 use yii\log\Logger;
-use yii\log\Target as BaseTarget;
+use yii\log\Target;
 
-class Target extends BaseTarget
+class SentryTarget extends Target
 {
     /**
-     * @var string|Component
+     * @var string|SentryComponent
      */
     public $sentry = 'sentry';
 
@@ -26,7 +26,7 @@ class Target extends BaseTarget
     {
         parent::init();
 
-        $this->sentry = Instance::ensure($this->sentry, Component::class);
+        $this->sentry = Instance::ensure($this->sentry, SentryComponent::class);
 
         if (!$this->sentry->enabled) {
             $this->enabled = false;

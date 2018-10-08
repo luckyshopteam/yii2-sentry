@@ -7,7 +7,7 @@ use yii\base\Component as BaseComponent;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 
-class Component extends BaseComponent
+class SentryComponent extends BaseComponent
 {
     /**
      * Set to `false` in development environment to skip collecting errors

@@ -3,6 +3,9 @@
     "description": "Yii2 sentry",
     "keywords": ["php", "luckyshop", "yii2", "sentry"],
     "homepage": "https://github.com/luckyshopteam",
+    "require": {
+        "sentry/sentry": "*"
+    },
     "autoload": {
         "psr-4": {
             "luckyshopteam\\sentry\\": "/src"
