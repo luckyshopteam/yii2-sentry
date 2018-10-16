@@ -3,6 +3,7 @@ declare (strict_types=1);
 
 namespace luckyshopteam\sentry;
 
+use Yii;
 use app\models\User;
 use Throwable;
 use yii\di\Instance;
@@ -16,6 +17,11 @@ class SentryTarget extends Target
      * @var string|SentryComponent
      */
     public $sentry = 'sentry';
+
+    /**
+     * @var array User data for sending to the Sentry API server.
+     */
+    public $userData;
 
     /**
      * Initializes the object.
@@ -61,16 +67,15 @@ class SentryTarget extends Target
                     'category' => $category,
                 ],
             ];
-            if (\Yii::$app->user->id ?? null) {
-                /** @var User $user */
-                $user = \Yii::$app->user->identity;
-                $data['user'] = [
-                    'id' => $user->id,
-                    'email' => $user->email,
-                    'group_id' => $user->group_id,
-                    'role' => $user->role,
-                ];
+
+            if ($this->userData && $user = Yii::$app->user->identity) {
+                foreach ($this->userData as $attribute) {
+                    if ($user->canGetProperty($attribute)) {
+                        $data['user'][$attribute] = $user->$attribute;
+                    }
+                }
             }
+
             $vars = null;
 
             if ($context instanceof Throwable) {

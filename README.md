@@ -35,6 +35,11 @@ composer require luckyshopteam/yii2-sentry @dev
                     'yii\web\HttpException:429', // TooManyRequestsHttpException
                     'yii\web\HttpException:401', // UnauthorizedHttpException
                 ],
+                'userData' => [
+                    'id' => $user->id,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ],
             ],
         ]
     ],
