@@ -68,7 +68,7 @@ class SentryTarget extends Target
                 ],
             ];
 
-            if ($this->userData && $user = Yii::$app->user->identity) {
+            if ($this->userData && Yii::$app->has('user') && $user = Yii::$app->user->identity) {
                 foreach ($this->userData as $attribute) {
                     if ($user->canGetProperty($attribute)) {
                         $data['user'][$attribute] = $user->$attribute;
