@@ -5,7 +5,7 @@
     "homepage": "https://github.com/luckyshopteam",
     "require": {
         "sentry/sentry": "2.2.1",
-        "sentry/sdk": "2.0.3"
+        "sentry/sdk": "2.0.4"
     },
     "autoload": {
         "psr-4": {
