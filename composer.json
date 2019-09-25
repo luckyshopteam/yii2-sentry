@@ -4,6 +4,7 @@
     "keywords": ["php", "luckyshop", "yii2", "sentry"],
     "homepage": "https://github.com/luckyshopteam",
     "require": {
+        "sentry/sentry": "^2.0.1",
         "sentry/sdk": "2.0.*"
     },
     "autoload": {
