@@ -3,10 +3,25 @@
 namespace luckyshopteam\sentry;
 
 use Closure;
+use function Sentry\captureEvent;
+use Sentry\SentrySdk;
+use Sentry\State\HubInterface;
+use Sentry\State\Scope;
+use Yii;
 use yii\base\Component as BaseComponent;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 
+/**
+ * Class SentryComponent
+ *
+ * @property string  $dsn
+ * @property HubInterface  $client
+ * @property boolean $enabled
+ * @property boolean $environment
+ *
+ * @package luckyshopteam\sentry
+ */
 class SentryComponent extends BaseComponent
 {
     /**
@@ -29,31 +44,59 @@ class SentryComponent extends BaseComponent
     public $environment = 'production';
 
     /**
-     * @var \Raven_Client|array Raven client or configuration array used to instantiate one
+     * @var HubInterface|array Клиент для отправки сообщений, пока привязываемся к интерфейсу из sentry SDK
      * @throws InvalidConfigException
      */
     public $client = [];
 
+    /**
+     * @throws InvalidConfigException
+     */
     public function init()
     {
+        parent::init();
+
         $this->validateDsn();
 
         if (!$this->enabled) {
             return;
         }
 
-        $this->setRavenClient();
+        $this->initClient();
         $this->setEnvironmentOptions();
     }
 
+    /**
+     * Валидация входных данных из конфига и инициализация клиента
+     * @return void
+     * @throws InvalidConfigException
+     */
+    public function initClient()
+    {
+        $data = ['dsn' => $this->dsn];
+
+        if (is_array($this->client) && isset($this->client['class'])) {
+            $this->client = Yii::createObject(array_merge($this->client, $data));
+        } elseif (!$this->client) {
+            \Sentry\init($data);
+
+            $this->client = SentrySdk::getCurrentHub();
+        }
+        if (!is_object($this->client)) {
+            throw new InvalidConfigException(get_class($this) . '::' . 'client must be an object');
+        }
+    }
+
+    /**
+     * @throws InvalidConfigException
+     */
     private function validateDsn()
     {
         if (empty($this->dsn)) {
             throw new InvalidConfigException('Private DSN must be set!');
         }
 
-        // throws \InvalidArgumentException if dsn is invalid
-        \Raven_Client::parseDSN($this->dsn);
+        //TODO возможно валидация что бы url dsn указывал на наш ресурс
     }
 
     /**
@@ -70,29 +113,83 @@ class SentryComponent extends BaseComponent
         }
     }
 
-    private function setRavenClient()
+    public function captureException($exception, $data = [])
     {
-        if (is_array($this->client)) {
-            $ravenClass = ArrayHelper::remove($this->client, 'class', '\Raven_Client');
-            $options = $this->client;
-            $this->client = new $ravenClass($this->dsn, $options);
-        } elseif (!is_object($this->client) || $this->client instanceof Closure) {
-            $this->client = Yii::createObject($this->client);
+        $this->captureEvent(['exception' => $exception], $data);
+    }
+
+    public function captureMessage($payLoad, $data = [])
+    {
+        $this->captureEvent($payLoad, $data);
+    }
+
+    /**
+     * В сентри по сути все является ивентом, exception, message и тд. Разница лишь в параметрах, + ко всему этому нам необходим общий метод через который
+     * происходит отправка сообщений, т.к сбор данных (extra, tags и данные пользователя) при ивенте - одинаков во всех случаях.
+     *
+     * @param array $payLoad Основная информация с настройками для ивента
+     * @param array $data Дополнительные данные которые могут пригодиться (tags, extra, данные пользователи и тд)
+     *
+     * TODO обсудить создание дополнительного параметра userData для компонента, что бы при получении сообщения проверять если нет данных пользователя, то брать дефолтные.
+     *
+     * @return void
+     */
+    public function captureEvent($payLoad, $data = [])
+    {
+        if (!empty($data['extra'])) {
+            $this->setExtra($data['extra']);
+        }
+        if (!empty($data['tags'])) {
+            $this->setTags($data['tags']);
+        }
+        if (!empty($data['user'])) {
+            $this->setUser($data['user']);
         }
 
-        if (!is_object($this->client)) {
-            throw new InvalidConfigException(get_class($this) . '::' . 'client must be an object');
+        $this->client->captureEvent($payLoad);
+
+        $this->client->configureScope(function (Scope $scope) : void {
+            $scope->clear();
+        });
+    }
+
+    /**
+     * Добавление extra параметров
+     * @param array $extra
+     * @return void
+     */
+    protected function setExtra(array$extra): void
+    {
+        foreach ($extra as $key => $value) {
+            $this->client->configureScope(function (Scope $scope) use($key, $value) : void {
+                $scope->setExtra($key, $value);
+            });
         }
     }
 
-    public function captureException($exception, $culpritOrOptions = null, $logger = null, $vars = null)
+    /**
+     * Добавление tags параметров
+     * @param array $tags
+     * @return void
+     */
+    protected function setTags(array $tags): void
     {
-        return $this->client->captureException($exception, $culpritOrOptions, $logger, $vars);
+        foreach ($tags as $key => $value) {
+            $this->client->configureScope(function (Scope $scope) use($key, $value) : void {
+                $scope->setTag($key, $value);
+            });
+        }
     }
 
-    public function capture($data, $stack = null, $vars = null)
+    /**
+     * Добавление данных пользователя.
+     * @param array $userData
+     * @return void
+     */
+    protected function setUser(array $userData): void
     {
-        return $this->client->capture($data, $stack, $vars);
+        $this->client->configureScope(function (Scope $scope) use($userData) : void {
+            $scope->setUser($userData);
+        });
     }
-
 }
