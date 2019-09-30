@@ -156,12 +156,22 @@ class SentryTarget extends Target
         if (is_string($context)) {
             $payLoad['message'] = $context;
         } elseif (is_array($context)) {
-            $payLoad['message'] = $context['message'] ?? $context['msg'] ?? 'no message';
+            $payLoad['message'] = ArrayHelper::remove($context, 'msg') ?? ArrayHelper::remove($context, 'message', 'no message');
+
+            if (isset($context['traces'])) {
+                $traces[] = ArrayHelper::remove($context, 'traces');
+            }
+
+            $vars = ArrayHelper::remove($context, 'vars', []);
+            $tags = ArrayHelper::remove($context, 'tags', []);
+            $extra = ArrayHelper::remove($context, 'extra', []);
+
             $data = ArrayHelper::merge($data, [
-                'traces' => isset($context['traces']) ? array_unshift($traces, $context['traces']) : $traces, // возможно надо будет удалить
-                'tags'   => array_merge($context['vars'] ?? [], $context['tags'] ?? []),
-                'extra'  => $context['extra'] ?? [],
+                'traces' => $traces, // возможно надо будет удалить
+                'tags'   => array_merge($tags, $vars),
+                'extra'  => array_merge($extra, $context),
             ]);
+
         } else {
             $payLoad['message'] = VarDumper::export($context);
         }
