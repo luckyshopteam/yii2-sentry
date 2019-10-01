@@ -16,9 +16,6 @@ use yii\log\Target;
 /**
  * Class SentryTarget
  *
- * TODO обсудить возможность добавления дополнительного параметра DSN, т.к несмотря на то, что мы можем настраивать используемый компонент сентри,
- * возможны кейсы когда ошибки определенного типа нам будет необходимо складывать в отдельный сентри проект, но с использованием единого компонента, так что бы не приходилось увеличивать в размерах основной конфиг приложения
- *
  * @package luckyshopteam\sentry
  */
 class SentryTarget extends Target
@@ -29,8 +26,6 @@ class SentryTarget extends Target
     public $sentry = 'sentry';
 
     /**
-     * TODO обсудить возможность передачи в параметры анонимной функции.
-     *
      * @var array User data for sending to the Sentry API server.
      */
     public $userData;
